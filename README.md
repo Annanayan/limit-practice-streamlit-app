@@ -13,7 +13,7 @@ The app generates a random problem, checks the student's answer, and offers
 escalating help (feedback → hint → full solution). After all five problems
 are solved, it ends with a celebration and a recap of the technique.
 
-- **Live app:** https://YOUR-APP-NAME.streamlit.app
+- **Live app:** https://limit-practice-app-5.streamlit.app/
 - **Source code:** https://github.com/Annanayan/limit-practice-streamlit-app
 
 ## Quick start
