@@ -1,14 +1,13 @@
 """
 app.py
 ------
-The Streamlit screen for the limits-practice app. All the math lives in
-limits.py — this file only handles what the student sees and clicks.
+The Streamlit screen for the limits-practice app. All the math lives in limits.py.
 
 Run locally with:   streamlit run app.py
 
 How the file is laid out:
     1. Setup            – imports and page config
-    2. Content          – the feedback messages and their titles
+    2. Content          – the feedback message pools
     3. Helpers          – small functions for state, feedback, and spacing
     4. Styling          – the CSS that gives the page its look
     5. Session state    – set up / read the current problem
@@ -38,7 +37,7 @@ FEEDBACK = {
     "firstTryCorrect": [   # right, with no wrong attempts on this problem
         "Nice — first try! 🎯 You spotted that 0/0 trap right away. Check the solution at the bottom to compare with the standard write-up.",
         "Clean work! 💪 You nailed the canceling step, which means you really get how these problems are built. Peek at the solution below to see if there's an even shorter way.",
-        "First try, super clear thinking ✨ The 0/0 didn't fool you — you went straight to canceling. Scroll to the solution at the bottom to lock it in.",
+        "You nailed it! ✨ The 0/0 didn't fool you — you went straight to canceling. Scroll to the solution at the bottom to lock it in.",
         "Solid! 🎯 This kind of problem trips most people up on the very first step, but you slid right past it. Take a quick look at the solution below to make it stick.",
         "Great instincts 👀 Spot the common factor, cancel it, plug in — not a single misstep. The solution's at the bottom; give it a read to review.",
     ],
@@ -63,7 +62,7 @@ FEEDBACK = {
     ],
 }
 
-# Short heading shown above each feedback message (the coloured status word).
+# Short heading shown above each feedback message (the colored status word).
 TITLES = {
     "firstTryCorrect":  "Correct",
     "recoveredCorrect": "Correct",
@@ -92,7 +91,6 @@ def new_problem():
     st.session_state.submitted = False
     st.session_state.was_correct = False
     st.session_state.failed_once = False   # has this problem been answered wrong yet?
-    st.session_state.show_hint = False
     st.session_state.feedback_kind = None
     st.session_state.feedback_text = ""
     st.session_state.box_id = st.session_state.get("box_id", 0) + 1   # bump the key so the answer box clears for the next problem
@@ -113,8 +111,10 @@ def vspace(rem):
 # renders (its own class names like .stApp, and attributes like
 # kind="primary"). `!important` appears on most lines because it's the only
 # way to override Streamlit's built-in styles. Palette used throughout:
-# blue #0071e3 (action/brand), near-black #1d1d1f (text), grey #6e6e73
-# (secondary text), light grey #e5e5ea (borders / empty states).
+# blue #0071e3 (action/brand), 
+# near-black #1d1d1f (text), 
+# grey #6e6e73(secondary text), 
+# light grey #e5e5ea (borders / empty states).
 # ===========================================================================
 st.markdown("""
 <style>
@@ -122,13 +122,12 @@ st.markdown("""
    4.1  Base ................ page background + column padding
    4.2  Title ............... the h1 heading
    4.3  Primary button ...... Submit / Next / Practice again
-   4.4  Secondary button .... text-like reveal prompts (hint tab)
-   4.5  Text input .......... the answer box
-   4.6  Tabs ................ Hint / Full solution
-   4.7  Caption ............. small grey helper text
-   4.8  Card pop-in ......... finish screen: summary card entrance
-   4.9  Confetti ............ finish screen: falling pieces
-   4.10 Balloons ............ finish screen: rising balloons          */
+   4.4  Text input .......... the answer box
+   4.5  Help tabs ........... Hint / Full solution (st.radio styled as tabs)
+   4.6  Caption ............. small grey helper text
+   4.7  Card pop-in ......... finish screen: summary card entrance
+   4.8  Confetti ............ finish screen: falling pieces
+   4.9  Balloons ............ finish screen: rising balloons          */
 
 /* ── 4.1 Base ────────────────────────────────────────────────────────────
    Page background + breathing room above and below the content column. */
@@ -172,23 +171,7 @@ button[kind="primary"][disabled] {
     opacity:          1 !important;
 }
 
-/* ── 4.4 Secondary button — looks like plain text ────────────────────────
-   st.button(type="secondary") is the hint reveal/collapse trigger. Strip
-   all the button chrome (background, border, padding, min-height) so only
-   the sentence remains; the whole line is still the click target. */
-button[kind="secondary"] {
-    background:  transparent !important;
-    border:      none !important;
-    color:       #6e6e73 !important;
-    font-weight: 500 !important;
-    font-size:   0.9rem !important;
-    padding:     0 !important;
-    box-shadow:  none !important;
-    min-height:  0 !important;   /* Streamlit forces a minimum button height; undo it */
-}
-button[kind="secondary"]:hover { color: #1d1d1f !important; }   /* darken text = "I'm clickable" */
-
-/* ── 4.5 Text input (the answer box) ─────────────────────────────────────
+/* ── 4.4 Text input (the answer box) ─────────────────────────────────────
    Rounded white box with a grey border that turns blue when focused. */
 .stTextInput > div > div > input {
     border-radius: 8px !important;
@@ -201,7 +184,7 @@ button[kind="secondary"]:hover { color: #1d1d1f !important; }   /* darken text =
 }
 .stTextInput > div > div > input:focus {
     border-color: #0071e3 !important;
-    box-shadow:   0 0 0 3px rgba(0, 113, 227, 0.18) !important;   /* soft blue halo around the box */
+    box-shadow:   0 0 0 3px #0071e32e !important;   /* soft blue halo around the box (brand blue at 18% alpha) */
     outline:      none !important;                                /* replace the browser's default outline */
 }
 .stTextInput > label {
@@ -214,34 +197,46 @@ button[kind="secondary"]:hover { color: #1d1d1f !important; }   /* darken text =
     color:      #8e8e93 !important;
 }
 
-/* ── 4.6 Tabs (Hint / Full solution) ────────────────────────────────────
-   st.tabs is built on the BaseWeb library, so its parts are addressed by
-   data-baseweb attributes: tab-list = the row of labels, tab = one label,
-   tab-highlight = the sliding underline, tab-panel = the content below. */
-.stTabs [data-baseweb="tab-list"] {
-    gap:           1.6rem !important;                 /* space between the two tab labels */
-    border-bottom: 1px solid #e5e5ea !important;      /* thin line the tabs sit on */
+/* ── 4.5 Help tabs (Hint / Full solution) ───────────────────────────────
+   Looks like a tab bar, but is actually st.radio — st.tabs can't start
+   closed (its first tab always opens) or change its default selection.
+   Before a submit only 💡 Hint is rendered, unselected; after the submit
+   📖 Full solution joins it, pre-selected. The CSS hides the radio
+   circles and restyles the options as tab labels sitting on a thin
+   baseline, with the active one in blue over a blue underline. */
+div[role="radiogroup"] {
+    flex-direction: row !important;
+    gap:            1.6rem !important;                /* space between the two labels */
+    border-bottom:  1px solid #e5e5ea !important;     /* thin line the "tabs" sit on */
 }
-.stTabs [data-baseweb="tab"] {
-    height:        auto !important;
+div[role="radiogroup"] label[data-baseweb="radio"] {
+    margin-right:  0 !important;                      /* the gap above replaces Streamlit's own margins */
     padding:       0.5rem 0 !important;
-    background:    transparent !important;            /* no pill/button background */
-    color:         #6e6e73 !important;                /* inactive tab = grey */
-    font-size:     0.92rem !important;
-    font-weight:   500 !important;
+    margin-bottom: -1px !important;                   /* underline overlaps the baseline, like a real tab */
+    border-bottom: 2px solid transparent !important;  /* reserve the underline slot so labels don't jump */
+    cursor:        pointer !important;
 }
-.stTabs [data-baseweb="tab"]:hover { color: #1d1d1f !important; }
-.stTabs [aria-selected="true"] { color: #0071e3 !important; }              /* active tab = blue text */
-.stTabs [data-baseweb="tab-highlight"] { background-color: #0071e3 !important; }   /* blue underline under the active tab */
-.stTabs [data-baseweb="tab-panel"] { padding-top: 0.9rem !important; }     /* gap between tab bar and its content */
+div[role="radiogroup"] label[data-baseweb="radio"] > div:first-of-type {
+    display: none !important;                         /* hide the radio circle — label text only */
+}
+div[role="radiogroup"] label[data-baseweb="radio"] p {
+    color:       #6e6e73 !important;                  /* inactive "tab" = grey */
+    font-size:   0.92rem !important;
+    font-weight: 500 !important;
+}
+div[role="radiogroup"] label[data-baseweb="radio"]:hover p { color: #1d1d1f !important; }
+div[role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) {
+    border-bottom-color: #0071e3 !important;          /* blue underline under the active "tab" */
+}
+div[role="radiogroup"] label[data-baseweb="radio"]:has(input:checked) p { color: #0071e3 !important; }   /* active "tab" = blue text */
 
-/* ── 4.7 Caption — small grey helper text ──────────────────────────────── */
+/* ── 4.6 Caption — small grey helper text ──────────────────────────────── */
 .stCaption p {
     color:     #6e6e73 !important;
     font-size: 0.8rem !important;
 }
 
-/* ── 4.8 Finish screen: the summary card pops in ─────────────────────────
+/* ── 4.7 Finish screen: the summary card pops in ─────────────────────────
    @keyframes defines an animation timeline; .celebrate-card plays it once.
    The card starts small and low, overshoots to 101.5%, then settles —
    the overshoot is what makes it feel like a "pop" rather than a fade. */
@@ -252,7 +247,7 @@ button[kind="secondary"]:hover { color: #1d1d1f !important; }   /* darken text =
 }
 .celebrate-card { animation: popIn 0.6s cubic-bezier(0.21, 1.02, 0.4, 1) both; }
 
-/* ── 4.9 Finish screen: confetti falling down ────────────────────────────
+/* ── 4.8 Finish screen: confetti falling down ────────────────────────────
    Each piece starts above the viewport (-12vh), falls past the bottom
    (105vh) while spinning two full turns. The wrapper covers the whole
    screen but lets clicks pass through (pointer-events: none) and draws
@@ -271,7 +266,7 @@ button[kind="secondary"]:hover { color: #1d1d1f !important; }   /* darken text =
     animation-iteration-count: 1;
 }
 
-/* ── 4.10 Finish screen: a few balloons drifting up ──────────────────────
+/* ── 4.9 Finish screen: a few balloons drifting up ──────────────────────
    Balloons rise from the bottom edge to above the viewport (-125vh) and
    fade. fill-mode: forwards holds the final (off-screen) state — without
    it they'd snap back and sit on the page after rising. */
@@ -286,13 +281,13 @@ button[kind="secondary"]:hover { color: #1d1d1f !important; }   /* darken text =
 .balloon-wrap b {
     position: absolute; width: 28px; height: 35px;
     border-radius: 50% 50% 50% 50% / 46% 46% 54% 54%;        /* uneven ellipse = balloon silhouette */
-    box-shadow: inset -3px -4px 6px rgba(0, 0, 0, 0.14);     /* inner shadow bottom-right = 3D shading */
+    box-shadow: inset -3px -4px 6px #00000024;               /* inner shadow bottom-right = 3D shading (black at 14% alpha) */
     animation-name: balloonRise; animation-timing-function: ease-in;
     animation-iteration-count: 1; animation-fill-mode: forwards;
 }
 .balloon-wrap b::after {
     content: ''; position: absolute; top: 100%; left: 50%;   /* the short string hanging below */
-    width: 1px; height: 10px; background: rgba(0, 0, 0, 0.12);
+    width: 1px; height: 10px; background: #0000001f;         /* black at 12% alpha */
 }
 </style>
 """, unsafe_allow_html=True)
@@ -375,7 +370,7 @@ if st.session_state.session_done:
     )
     balloons = "".join(
         f'<b style="left:{random.randint(5, 95)}%;bottom:{random.randint(-6, 2)}vh;'
-        f'background:radial-gradient(circle at 32% 28%, rgba(255,255,255,0.6), {c} 62%);'
+        f'background:radial-gradient(circle at 32% 28%, #ffffff99, {c} 62%);'   # white at 60% alpha for the balloon's highlight spot
         f'animation-duration:{random.uniform(3.0, 4.5):.2f}s;'
         f'animation-delay:{random.uniform(0, 0.1):.2f}s;"></b>'
         for c in (random.choice(colors) for _ in range(9))
@@ -440,19 +435,22 @@ if st.session_state.session_done:
     st.stop()   # nothing below the finish screen should render
 
 
-# 6.4 Problem — the general form, then this question's real numbers
-st.markdown(
-    '<p style="color:#3a3a3c;font-size:0.93rem;margin-bottom:0.3rem;">'
-    'Each question asks you to evaluate a limit that involves a square root and a '
-    'rational expression. The point stays the same every time — <em>x</em> always '
-    'approaches <strong>−1</strong> — while only the coefficients <strong>b</strong> '
-    'and <strong>c</strong> change from one round to the next. '
-    'Every problem has the same shape:</p>',
-    unsafe_allow_html=True,
-)
-st.latex(r"\lim_{x \to -1} \sqrt{\dfrac{x + 1}{x^2 + c\,x + b}}")
-
-vspace(1.4)
+# 6.4 Problem — the general form, then this question's real numbers.
+#     The intro paragraph + general formula only appear on question 1:
+#     repeating them on every problem made testers stop to re-read them,
+#     assuming the text had changed.
+if q_num == 1:
+    st.markdown(
+        '<p style="color:#3a3a3c;font-size:0.93rem;margin-bottom:0.3rem;">'
+        'Each question asks you to evaluate a limit that involves a square root and a '
+        'rational expression. The point stays the same every time — <em>x</em> always '
+        'approaches <strong>−1</strong> — while only the coefficients <strong>b</strong> '
+        'and <strong>c</strong> change from one round to the next. '
+        'Every problem has the same shape:</p>',
+        unsafe_allow_html=True,
+    )
+    st.latex(r"\lim_{x \to -1} \sqrt{\dfrac{x + 1}{x^2 + c\,x + b}}")
+    vspace(1.4)
 
 st.markdown(
     '<p style="font-weight:600;font-size:1rem;color:#1d1d1f;margin-bottom:0.1rem;">'
@@ -530,49 +528,48 @@ if submit_clicked and not resolved and student_text.strip():
     st.session_state.feedback_text = pick_feedback(pool)
     st.rerun()
 
-# 6.9 Help tabs — Hint stays one click away; the solution opens on its own
-#     once they submit. Icons on both labels so the solution isn't missed.
+# 6.9 Help tabs — drawn with st.radio (styled as tabs in section 4.5).
+#     Before a submission only 💡 Hint exists, unselected, so nothing shows
+#     until the student clicks it. The first submit adds 📖 Full solution
+#     next to it AND selects it, so the worked solution opens on its own.
+#     The key encodes box_id + submitted: it changes exactly once per
+#     problem (at the first submit), which is what lets the new default
+#     take effect; afterwards the student can toggle freely.
 vspace(0.9)
-tab_hint, tab_solution = st.tabs(["💡 Hint", "📖 Full solution"])
+HINT_TAB, SOLUTION_TAB = "💡 Hint", "📖 Full solution"
+if st.session_state.submitted:
+    tab_options, default_idx = [HINT_TAB, SOLUTION_TAB], 1   # solution auto-opens
+else:
+    tab_options, default_idx = [HINT_TAB], None              # closed until clicked
+help_choice = st.radio(
+    "Help", tab_options,
+    index=default_idx, horizontal=True, label_visibility="collapsed",
+    key=f"help_tab_{st.session_state.box_id}_{int(st.session_state.submitted)}",
+)
 
-with tab_hint:
-    if st.session_state.show_hint:
-        if st.button("👉 Collapse the :blue[hint]", key="hide_hint"):
-            st.session_state.show_hint = False
-            st.rerun()
-        for i, step in enumerate(build_hint(problem), 1):
-            st.write(f"**{i}.** {step}")
-    else:
-        if st.button("Still stuck? Bring your question and open the :blue[hint].",
-                     key="reveal_hint"):   # the reveal prompt — one small step to peek at the method
-            st.session_state.show_hint = True
-            st.rerun()
+if help_choice == HINT_TAB:
+    vspace(0.5)
+    for i, step in enumerate(build_hint(problem), 1):
+        st.write(f"**{i}.** {step}")
 
-with tab_solution:
-    if st.session_state.submitted:
-        # Each step renders as one unit — title + why + expression share a
-        # dark tone and tight margins, with a single gap only between steps.
-        for step in build_explanation_steps(problem):
-            head = (
-                '<p style="font-weight:600;font-size:1rem;color:#1d1d1f;'
-                'margin:0 0 0.2rem;">' + step["title"] + '</p>'
+elif help_choice == SOLUTION_TAB:   # only exists once an answer was submitted
+    vspace(0.5)
+    # Each step renders as one unit — title + why + expression share a
+    # dark tone and tight margins, with a single gap only between steps.
+    for step in build_explanation_steps(problem):
+        head = (
+            '<p style="font-weight:600;font-size:1rem;color:#1d1d1f;'
+            'margin:0 0 0.2rem;">' + step["title"] + '</p>'
+        )
+        if step.get("why"):
+            head += (
+                '<p style="font-weight:400;font-size:0.92rem;color:#3a3a3c;'
+                'line-height:1.55;margin:0;"><span style="font-weight:600;">'
+                'Why:</span> ' + step["why"] + '</p>'
             )
-            if step.get("why"):
-                head += (
-                    '<p style="font-weight:400;font-size:0.92rem;color:#3a3a3c;'
-                    'line-height:1.55;margin:0;"><span style="font-weight:600;">'
-                    'Why:</span> ' + step["why"] + '</p>'
-                )
-            st.markdown(head, unsafe_allow_html=True)
-            st.latex(step["latex"])
-            vspace(1.3)   # single clean gap between steps
-    else:
-        st.markdown(
-            '<p style="color:#86868b;font-size:0.9rem;line-height:1.6;">'
-            'Submit your answer first — the full step-by-step solution opens up '
-            'right here.</p>',
-            unsafe_allow_html=True,
-        )   # the only gate: they have to submit an answer first
+        st.markdown(head, unsafe_allow_html=True)
+        st.latex(step["latex"])
+        vspace(1.3)   # single clean gap between steps
 
 # 6.10 Next handler — advance, or (after the last problem) show the finish
 #      screen on the following click so the student can linger on the solution
