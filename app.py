@@ -7,8 +7,8 @@ Run locally with:   streamlit run app.py
 
 How the file is laid out:
     1. Setup            – imports and page config
-    2. Content          – the feedback message pools
-    3. Helpers          – small functions for state, feedback, and spacing
+    2. Content          – the feedback messages
+    3. Helpers          – small functions for state and spacing
     4. Styling          – the CSS that gives the page its look
     5. Session state    – set up / read the current problem
     6. The page         – everything drawn on screen, top to bottom
@@ -31,35 +31,12 @@ TOTAL_PROBLEMS = 5   # one full round = the 5 clean-answer problems
 
 # ===========================================================================
 # 2. Content — feedback messages
-# On submit we choose ONE pool based on the outcome, then pick a random message from it.
+# One fixed message per outcome, chosen on submit.
 # ===========================================================================
 FEEDBACK = {
-    "firstTryCorrect": [   # right, with no wrong attempts on this problem
-        "Nice — first try! 🎯 You spotted that 0/0 trap right away. Check the solution at the bottom to compare with the standard write-up.",
-        "Clean work! 💪 You nailed the canceling step, which means you really get how these problems are built. Peek at the solution below to see if there's an even shorter way.",
-        "You nailed it! ✨ The 0/0 didn't fool you — you went straight to canceling. Scroll to the solution at the bottom to lock it in.",
-        "Solid! 🎯 This kind of problem trips most people up on the very first step, but you slid right past it. Take a quick look at the solution below to make it stick.",
-        "Great instincts 👀 Spot the common factor, cancel it, plug in — not a single misstep. The solution's at the bottom; give it a read to review.",
-    ],
-    "recoveredCorrect": [   # right, but only after getting it wrong at least once
-        "There it is! 💪 Once you found the factor you could cancel, it all clicked, right? That \"stuck → adjust → solved\" loop is real learning. Compare with the solution at the bottom.",
-        "Finally got it — and you didn't give up, which matters most 🔥 The 0/0 → factor → cancel routine will feel familiar next time. The solution at the bottom helps lock in the steps.",
-        "Cracked it! 👏 The tough ones teach you the most — you won't forget this one. Scroll to the solution at the bottom and walk through the full thinking once more.",
-        "Nice comeback ✨ Getting it wrong and then fixing it yourself is worth more than getting it right the first time. The solution's at the bottom — use it to reinforce.",
-        "Got it! 🌱 That \"find the problem → switch approach → solve it\" path you just took is exactly where real skill grows. Check the solution below for the clean write-up.",
-        "Done! 🎯 Getting stuck isn't the problem — finding the canceling trick is the win. Look at the solution at the bottom to confirm your steps match.",
-    ],
-    "incorrect": [   # any wrong answer (one flat pool, not tied to attempt count)
-        "Getting it wrong is totally normal 🙂 With these limit problems, don't rush to compute — plug in the value x is approaching and watch what the top and bottom become. That usually tells you the next move. Stuck? The solution's at the bottom.",
-        "Don't lose heart 🙂 The key signal is 0/0: if both top and bottom turn into 0 after you plug in, it's not \"no answer\" — it's a hint that they share a common factor you can cancel first, then plug in. Full steps are in the solution below.",
-        "Try once more 👀 When you see 0/0, don't stop — it means the top and bottom hide the same factor. Find it, cancel it, and the problem opens up. Need a nudge? Scroll to the solution at the bottom.",
-        "Don't panic, you're close. The general routine here is two steps: ① factor whatever can be factored; ② cancel the common factor — the expression suddenly gets simple, then you plug in. Still stuck? The solution's at the bottom.",
-        "Don't grind it out the hard way 🙂 The main line is: factor → cancel the common factor on top and bottom → plug in the value. One step at a time, don't do it all in one go. The solution at the bottom lays out every step — read it, then redo it yourself.",
-        "You're working hard 👏 Just remember one thing: 0/0 is a \"cancel me\" signal, not a dead end. Try factoring, canceling, then plugging in. If you're still lost, the solution's at the bottom anytime — understand the thinking, then write it out once on your own to really own it.",
-        "Stuck? That's normal — this is the trickiest step in these problems. First check whether plugging in gives you 0/0; if it does, find the common factor and cancel it. The solution at the bottom has the full walk-through to make it clearer.",
-        "Direction matters 🧭 Don't let the bottom of the fraction scare you — can you split it into two things multiplied together? Once it's split, part of it often cancels with the top. Stuck? Check the solution at the bottom.",
-        "Take your time 🙂 Simplify the fraction under the root first: find the common factor on top and bottom, cancel it, then plug in the value — it usually pops right out. The solution at the bottom matches each of your steps.",
-    ],
+    "firstTryCorrect":  "Correct! See the Full Solution below.",
+    "recoveredCorrect": "You got it! See the Full Solution below.",
+    "incorrect":        "You're very close — don't give up, try again. Not sure where to start? Check the Hint and Full Solution below.",
 }
 
 # Short heading shown above each feedback message (the colored status word).
@@ -71,17 +48,8 @@ TITLES = {
 
 
 # ===========================================================================
-# 3. Helpers — small functions for state, feedback, and spacing
+# 3. Helpers — small functions for state and spacing
 # ===========================================================================
-def pick_feedback(pool):
-    """Pick a random message from a pool, avoiding the one shown last from that pool."""
-    options = FEEDBACK[pool]
-    avoid = st.session_state.last_shown.get(pool)
-    fresh = [m for m in options if m != avoid] or options
-    choice = random.choice(fresh)
-    st.session_state.last_shown[pool] = choice   # remember it so we don't repeat next time
-    return choice
-
 def new_problem():
     """Generate a fresh problem and reset all the per-problem state flags."""
     used = st.session_state.get("used_ks", [])
@@ -300,7 +268,6 @@ if "problem" not in st.session_state:   # first visit only: start counters, make
     st.session_state.used_ks = []
     st.session_state.questions_completed = 0
     st.session_state.session_done = False
-    st.session_state.last_shown = {}   # last message shown per pool (for no-repeat)
     new_problem()
 
 problem   = st.session_state.problem
@@ -512,20 +479,20 @@ else:
             help=None if resolved else "Answer correctly to continue",
         )
 
-# 6.8 Submit handler — feedback text is chosen HERE (not when drawing it) so
-#     it stays the same across reruns from tab clicks or hint reveals
+# 6.8 Submit handler — checks the answer and records which feedback message
+#     to show (based on whether this problem was missed earlier)
 if submit_clicked and not resolved and student_text.strip():
     st.session_state.submitted = True
     correct = check_answer(student_text, problem)
     st.session_state.was_correct = correct
     if correct:
         st.session_state.questions_completed += 1
-        pool = "recoveredCorrect" if st.session_state.failed_once else "firstTryCorrect"   # praise depends on earlier misses
+        kind = "recoveredCorrect" if st.session_state.failed_once else "firstTryCorrect"   # message depends on earlier misses
     else:
         st.session_state.failed_once = True
-        pool = "incorrect"
-    st.session_state.feedback_kind = pool
-    st.session_state.feedback_text = pick_feedback(pool)
+        kind = "incorrect"
+    st.session_state.feedback_kind = kind
+    st.session_state.feedback_text = FEEDBACK[kind]
     st.rerun()
 
 # 6.9 Help tabs — drawn with st.radio (styled as tabs in section 4.5).

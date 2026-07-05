@@ -91,9 +91,8 @@ instructional quality rather than feature count:
 - **The interface encodes the flow.** Elements appear in the order they are
   used, and button states leave exactly one available next action at each
   step, so the flow needs no written instructions.
-- **Feedback follows learning principles.** Feedback is immediate and
-  explanatory rather than a bare verdict; help is scaffolded, deepening only
-  as far as the learner needs.
+- **Feedback follows learning principles.** Feedback is immediate; help is
+  scaffolded, deepening only as far as the learner needs.
 
 ### Math engine (`limits.py`)
 
@@ -124,10 +123,8 @@ instructional quality rather than feature count:
   problem is answered correctly, yet the full worked solution opens after
   the *first* submission, right or wrong — the one pedagogically meaningful
   barrier (an attempt is required) is kept; everything else is low-friction.
-- **Feedback that teaches.** Three message pools — first-try correct,
-  correct after a miss, and incorrect (each with a small tip). Messages are
-  drawn with a per-pool no-repeat and chosen once at submit time, so they
-  stay stable across Streamlit's reruns.
+- **Feedback by outcome.** One short message per outcome — first-try
+  correct, correct after a miss, and incorrect — pointing to the help below.
 - **Escalating help at three depths.** The hint gives only the entry-point
   insight (0/0 means a shared factor) and stops; the solution shows all four
   steps, each with a one-clause "why"; the end-of-session recap compresses
@@ -177,22 +174,17 @@ Readable code is treated as part of the deliverable:
    the session length (→ the segmented progress bar), and did not discover
    the solution tab (→ tab icons and the auto-opening solution). The tester
    also suggested an AI tutor (see below).
-7. **Iterate and deploy** — code-quality passes over both files, then
+7. **Second round of user testing (n = 1).** After the round-one changes, a
+   second learner — a Master's student in Education — worked through a full
+   session. The round-one changes were strongly endorsed, with the
+   interaction flow read as clear and the full solution as comprehensive.
+   Four suggestions drove a further pass toward a clearer, lower
+   cognitive-load interaction.
+8. **Iterate and deploy** — code-quality passes over both files, then
    deployment as a web app.
 
 ## Future plans
 
-- **A second round of user testing** — unmoderated and remote: 3–5 learners
-  complete all five problems on the deployed app at their own pace, with no
-  observer (solving limits is cognitively demanding, and being watched would
-  distort both the experience and the behaviour), followed by a
-  retrospective semi-structured interview by phone or text covering
-  interaction clarity, information architecture, learning experience,
-  feedback quality, and overall impressions — what worked, what didn't, and
-  why. The primary goal is to find the next round of improvement
-  opportunities; checking that the round-one changes (segmented progress
-  bar, lower-friction solution) resolved the observed problems is a
-  secondary question.
 - **An AI tutor for personalized questions**, as suggested by test user —
   supplementing the current design: answer checking and the worked solution
   stay deterministic, while the tutor handles free-form questions.
