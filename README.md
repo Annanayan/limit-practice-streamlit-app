@@ -10,7 +10,7 @@ An interactive tool for practicing limits of the form
 ```
 
 The app generates a random problem, checks the student's answer, and offers
-escalating help (feedback → hint → full solution). After all five problems
+escalating help (Hint → Full Solution →Summary ). After all five problems
 are solved, it ends with a celebration and a recap of the technique.
 
 - **Live app:** https://limit-practice-app-5.streamlit.app/
@@ -83,11 +83,11 @@ design work concentrates on information architecture, interaction flow, and
 instructional quality rather than feature count:
 
 - **Minimize extraneous cognitive load.** Everything needed for the task
-  (progress, problem, answer, feedback, help) sits on a single page with no
+  (progress, problem, answer, feedback, help) sits on a single page with minimal
   navigation or scrolling, keeping attention on the mathematics.
 - **Restrained visual design with semantic color.** Blue for actions and
   position, green/red reserved for correct/incorrect, grey for secondary
-  information. Color encodes state, not decoration.
+  information. Color encodes state, then decoration.
 - **The interface encodes the flow.** Elements appear in the order they are
   used, and button states leave exactly one available next action at each
   step, so the flow needs no written instructions.
@@ -101,8 +101,7 @@ instructional quality rather than feature count:
   inconsistent problem.
 - **Clean answers by design.** Restricting `k` to perfect-square values of
   `a` makes every answer a tidy fraction, matching the brief's `1/2` example
-  and avoiding ambiguous square-root entry. The limit *skill* practiced is
-  identical, so this is a UX choice, not a simplification.
+  and avoiding ambiguous square-root entry. 
 - **No repeated problems.** Used `k` values are tracked and excluded, so one
   session walks through all five problems exactly once.
 - **Forgiving answer checking.** Accepts a fraction (`1/10`) or a decimal
@@ -119,17 +118,16 @@ instructional quality rather than feature count:
 - **A progress bar that locates you.** Five discrete segments in three
   states: solved (blue), current (light blue), not reached (grey). It fills
   left-to-right, the same direction as the "Next →" button.
-- **Gated progression, but never stuck.** "Next" stays disabled until the
+- **Gated progression.** "Next" stays disabled until the
   problem is answered correctly, yet the full worked solution opens after
   the *first* submission, right or wrong — the one pedagogically meaningful
   barrier (an attempt is required) is kept; everything else is low-friction.
 - **Feedback by outcome.** One short message per outcome — first-try
   correct, correct after a miss, and incorrect — pointing to the help below.
 - **Escalating help at three depths.** The hint gives only the entry-point
-  insight (0/0 means a shared factor) and stops; the solution shows all four
-  steps, each with a one-clause "why"; the end-of-session recap compresses
-  the method into five lines. All three tell the same causal story at
-  increasing depth.
+  insight and stops; the solution shows all steps, each with a one-clause "why"; 
+  the end-of-session recap compresses the method into five lines. 
+  All three tell the same causal story at increasing depth.
 - **State details that keep the flow honest.** The answer box clears between
   problems, locks once correct, and carries input-format guidance as
   placeholder text. On the final problem, Submit/Next is replaced by a single
@@ -165,23 +163,31 @@ Readable code is treated as part of the deliverable:
 5. **Heuristic evaluation** in repeated passes — clear information
    architecture, uninterrupted flow, one page without scrolling, appropriate
    depth at each help layer.
-6. **User testing (contextual inquiry, n = 1).** One learner was observed
-   working through a full session — at this formative stage a single
-   participant is enough to surface the largest interaction and
-   information-architecture problems, which is what this round was for.
-   Confirmed as working: feedback wording, the Submit/Next row, the recap.
-   Two findings drove changes: the tester could not tell their position or
-   the session length (→ the segmented progress bar), and did not discover
-   the solution tab (→ tab icons and the auto-opening solution). The tester
-   also suggested an AI tutor (see below).
-7. **Second round of user testing (n = 1).** After the round-one changes, a
-   second learner — a Master's student in Education — worked through a full
-   session. The round-one changes were strongly endorsed, with the
-   interaction flow read as clear and the full solution as comprehensive.
-   Four suggestions drove a further pass toward a clearer, lower
-   cognitive-load interaction.
-8. **Iterate and deploy** — code-quality passes over both files, then
-   deployment as a web app.
+6. **1st user testing** (in-person, unobserved session with a post-task
+   debrief, n = 1). One learner worked through a full session in the same
+   room; their solving was intentionally not observed, to avoid evaluation
+   anxiety on focus-heavy calculus work, with feedback gathered afterward.
+   At this formative stage a single participant is enough to surface the
+   largest interaction and information-architecture problems, which is what
+   this round was for. Confirmed as working: the feedback wording, the
+   Submit/Next row, and the recap. Two findings drove changes: the tester
+   could not tell their position in the set (→ the segmented progress bar),
+   and did not notice the solution tab (→ tab icons and the auto-opening
+   solution). The tester also suggested an AI tutor (see below).
+7. **First deployment** — after round-one changes, code-quality passes over
+   both files, then deployed as a web app.
+8. **2nd user testing** (unmoderated remote session with a post-task debrief,
+   n = 1). A second learner — a Master's student in Education — independently
+   worked through a full session on the deployed app. The round-one changes
+   were strongly endorsed: the interaction flow read as clear and the full
+   solution as comprehensive. Four suggestions drove a further pass toward a
+   clearer, lower-cognitive-load interaction:
+   - Make the Hint button more prominent.
+   - Remove the empty "Full solution" button that appears before the user answers.
+   - Show the intro/instructions only on the first question, not on later ones.
+   - Simplify the instant-feedback messages.
+8. **Iterate and redeploy** — after further iteration, code-quality passes
+   over both files, then redeployed the updated app.
 
 ## Future plans
 
